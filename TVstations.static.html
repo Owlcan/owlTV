@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owltech CMB Visualizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=VT323&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            color: #eee;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            gap: 60px;
+        }
+
+        /* TV Bezel */
+        .tv-set {
+            background: #2a2a2a;
+            padding: 40px 40px 80px 40px;
+            border-radius: 20px;
+            box-shadow:
+                inset 0 0 15px #000,
+                0 15px 40px rgba(0, 0, 0, 0.9);
+            border: 4px solid #0a0a0a;
+            position: relative;
+        }
+
+        /* Inner Screen */
+        .screen-container {
+            background: #050505;
+            border-radius: 50% / 5%;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.1);
+            border: 8px solid #111;
+        }
+
+        canvas {
+            display: block;
+            width: 960px;
+            height: 720px;
+            filter: contrast(1.3) brightness(0.9);
+        }
+
+        /* YouTube Injection Layer */
+        .yt-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            z-index: 4;
+            pointer-events: auto;
+            background: #000;
+        }
+
+        /* On-Screen Terminal UI for YouTube Input */
+        .yt-ui {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 15, 0, 0.9);
+            border: 2px solid #0f0;
+            padding: 30px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+            font-family: 'VT323', monospace;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 15px rgba(0, 255, 0, 0.1);
+            width: 80%;
+            box-sizing: border-box;
+        }
+
+        .yt-ui-title {
+            color: #0f0;
+            font-size: 28px;
+            text-shadow: 0 0 10px #0f0;
+            text-align: center;
+        }
+
+        .yt-ui input {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            padding: 10px;
+            width: 100%;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .yt-ui input:focus {
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .yt-ui-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .yt-ui button {
+            background: #002200;
+            border: 1px solid #0f0;
+            color: #0f0;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            padding: 8px 20px;
+            cursor: pointer;
+            box-shadow: none;
+            text-shadow: 0 0 5px #0f0;
+            transition: all 0.1s;
+            flex-direction: row;
+        }
+
+        .yt-ui button:hover {
+            background: #0f0;
+            color: #000;
+            text-shadow: none;
+        }
+
+        .yt-ui button:active {
+            transform: translateY(2px);
+        }
+
+        /* On-Screen Displays */
+        .osd {
+            position: absolute;
+            font-family: 'VT323', monospace;
+            font-size: 48px;
+            color: #0f0;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.4);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+            pointer-events: none;
+        }
+
+        .channel-display {
+            top: 25px;
+            right: 35px;
+        }
+
+        .volume-display {
+            bottom: 25px;
+            right: 35px;
+            font-size: 36px;
+        }
+
+        /* Scanlines Overlay */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.25) 50%,
+                    rgba(0, 0, 0, 0.25));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Screen Glare */
+        .glare {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.5) 100%);
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        /* Magitek Logo */
+        .logo {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 28px;
+            letter-spacing: 6px;
+            color: #555;
+            text-shadow:
+                -1px -1px 0px #111,
+                1px 1px 0px #444,
+                0 0 15px rgba(100, 150, 255, 0.2);
+        }
+
+        /* Chunky Remote Control */
+        .remote {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            padding: 30px 20px;
+            border-radius: 15px 15px 40px 40px;
+            box-shadow:
+                10px 10px 30px rgba(0, 0, 0, 0.9),
+                inset 2px 2px 5px rgba(255, 255, 255, 0.1),
+                inset -5px -5px 15px rgba(0, 0, 0, 0.8);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            border: 3px solid #0a0a0a;
+            width: 200px;
+        }
+
+        .remote-title {
+            grid-column: span 3;
+            text-align: center;
+            font-size: 0.70em;
+            color: #777;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            border-bottom: 2px solid #111;
+            padding-bottom: 10px;
+        }
+
+        .remote button {
+            background: #333;
+            color: #ccc;
+            border: 2px solid #111;
+            padding: 15px 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            box-shadow: 0 6px 0 #050505, inset 0 1px 2px rgba(255, 255, 255, 0.1);
+            transition: all 0.05s ease;
+            text-shadow: 0 1px 2px #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remote button:active {
+            box-shadow: 0 0 0 #050505;
+            transform: translateY(6px);
+        }
+
+        .btn-power {
+            background: #522 !important;
+            grid-column: 3;
+            border-radius: 50% !important;
+            width: 45px;
+            height: 45px;
+            justify-self: center;
+            padding: 0 !important;
+        }
+
+        .btn-power.active {
+            background: #c33 !important;
+            color: #fff;
+            box-shadow: 0 0 15px #f00, 0 6px 0 #050505 !important;
+        }
+
+        .btn-power:active.active {
+            box-shadow: 0 0 5px #f00 !important;
+        }
+
+        .btn-num {
+            background: #2a2a2a !important;
+        }
+
+        .btn-num:active {
+            background: #444 !important;
+            color: #fff;
+        }
+
+        .btn-ch,
+        .btn-vol {
+            background: #1a1a1a !important;
+            font-size: 0.75em !important;
+            padding: 10px 2px !important;
+        }
+
+        .btn-ch:active,
+        .btn-vol:active {
+            background: #333 !important;
+            color: #fff;
+        }
+
+        .btn-warp {
+            background: #426 !important;
+            grid-column: span 3;
+            margin-top: 10px;
+        }
+
+        .btn-warp.active {
+            background: #93d !important;
+            color: #fff;
+            box-shadow: 0 0 15px #d5f, 0 6px 0 #050505 !important;
+        }
+
+        .btn-psych {
+            background: #246 !important;
+            grid-column: span 3;
+        }
+
+        .btn-psych.active {
+            background: #38f !important;
+            color: #fff;
+            box-shadow: 0 0 15px #0af, 0 6px 0 #050505 !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="yt-audio-wrapper" style="display: none;">
+        <div id="yt-audio-target"></div>
+    </div>
+
+    <div class="tv-set">
+        <div class="screen-container">
+            <canvas id="screen" width="960" height="720"></canvas>
+
+            <div id="yt-wrapper" class="yt-container">
+                <div id="yt-player-target"></div>
+            </div>
+
+            <div id="yt-ui" class="yt-ui">
+                <div class="yt-ui-title">SECURE UPLINK REQUESTED</div>
+                <input type="text" id="yt-input" placeholder="PASTE YOUTUBE URL..." autocomplete="off">
+                <div class="yt-ui-buttons">
+                    <button id="yt-cancel">CANCEL</button>
+                    <button id="yt-submit">CONNECT</button>
+                </div>
+            </div>
+
+            <div id="channel-display" class="osd channel-display">03</div>
+            <div id="volume-display" class="osd volume-display">VOL 50</div>
+            <div class="scanlines"></div>
+            <div class="glare"></div>
+        </div>
+        <div class="logo">OWLTECH</div>
+    </div>
+
+    <div class="remote">
+        <div class="remote-title">CMB Tuner</div>
+        <div></div>
+        <div></div>
+        <button class="btn-power" id="btn-power">PWR</button>
+
+        <button class="btn-num" data-num="1">1</button>
+        <button class="btn-num" data-num="2">2</button>
+        <button class="btn-num" data-num="3">3</button>
+
+        <button class="btn-num" data-num="4">4</button>
+        <button class="btn-num" data-num="5">5</button>
+        <button class="btn-num" data-num="6">6</button>
+
+        <button class="btn-num" data-num="7">7</button>
+        <button class="btn-num" data-num="8">8</button>
+        <button class="btn-num" data-num="9">9</button>
+
+        <button class="btn-ch" id="btn-ch-up">CH &#9650;</button>
+        <button class="btn-num" data-num="0">0</button>
+        <button class="btn-vol" id="btn-vol-up">VOL &#9650;</button>
+
+        <button class="btn-ch" id="btn-ch-dn">CH &#9660;</button>
+        <button class="btn-ch" id="btn-play-pause" style="font-size: 1.2em !important;">⏯️</button>
+        <button class="btn-vol" id="btn-vol-dn">VOL &#9660;</button>
+
+        <button class="btn-ch" id="btn-seek-dn" style="font-size: 1.2em !important;">⏪</button>
+        <div
+            style="display:flex; align-items:center; justify-content:center; color:#555; font-size:0.75em; font-weight:bold; letter-spacing: 1px;">
+            SEEK</div>
+        <button class="btn-ch" id="btn-seek-up" style="font-size: 1.2em !important;">⏩</button>
+
+        <button class="btn-warp" id="btn-warp">TIME WARP</button>
+        <button class="btn-psych" id="btn-psych">PSYCHEDELIA</button>
+    </div>
+
+    <script>
+        // Load the YouTube IFrame Player API code asynchronously
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // Global YouTube API references
+        let activeVideoPlayer = null;
+        let activeAudioPlayer = null;
+        let ytApiReady = false;
+
+        window.onYouTubeIframeAPIReady = () => {
+            ytApiReady = true;
+        };
+
+        const canvas = document.getElementById('screen');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // TV State
+        let power = false;
+        let psychMode = false;
+        let timeWarp = false;
+        let time = 0;
+        let currentChannel = 3;
+        let currentVolume = 50;
+
+        // Input logic
+        let inputBuffer = "";
+        let inputTimeout;
+        let osdTimeout;
+
+        // Embedded Easter Egg Channels Map
+        const ytEasterEggs = {
+            5: "UA1T4OHAArg",
+            11: "-EODjd3y_hk",
+            17: "l12jYhwNJCY",
+            23: "ZgGOgjA81ao",
+            28: "LH1QKZtw16I",
+            33: "gSlSfm66LHs",
+            39: "wW13ZqPAYSg",
+            44: "QaKPNu4Px7I",
+            51: "rhYrddJsSws",
+            56: "FZpAQIMvj4E",
+            61: "N0297DOWVIQ",
+            65: "XzbwevmsxMk",
+            72: "uCMxo9TynFQ",
+            76: "FxnMuEVCR8Y",
+            81: "yYU4QxuARsI",
+            85: "qdE999jSnyg",
+            88: "HcfbvPjkkjk",
+            92: "8q_AZt24HSg",
+            96: "IlYtRV2lu8c",
+            99: "nnSoyL97jl8"
+        };
+
+        // Create a sorted array of just the Easter Egg channels for the Seek logic
+        const seekableChannels = Object.keys(ytEasterEggs).map(Number).sort((a, b) => a - b);
+
+        // UI Elements
+        const btnPower = document.getElementById('btn-power');
+        const btnPsych = document.getElementById('btn-psych');
+        const btnWarp = document.getElementById('btn-warp');
+        const btnChUp = document.getElementById('btn-ch-up');
+        const btnChDn = document.getElementById('btn-ch-dn');
+        const btnSeekUp = document.getElementById('btn-seek-up');
+        const btnSeekDn = document.getElementById('btn-seek-dn');
+        const btnVolUp = document.getElementById('btn-vol-up');
+        const btnVolDn = document.getElementById('btn-vol-dn');
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const channelDisplay = document.getElementById('channel-display');
+        const volumeDisplay = document.getElementById('volume-display');
+
+        const ytWrapper = document.getElementById('yt-wrapper');
+        const ytAudioWrapper = document.getElementById('yt-audio-wrapper');
+
+        const ytUI = document.getElementById('yt-ui');
+        const ytInput = document.getElementById('yt-input');
+        const ytSubmit = document.getElementById('yt-submit');
+        const ytCancel = document.getElementById('yt-cancel');
+
+        // Audio Context Variables
+        let audioCtx;
+        let noiseSource;
+        let gainNode;
+        const maxNoiseVol = 0.15;
+
+        const blockW = 4;
+        const blockH = 4;
+        const cols = width / blockW;
+        const rows = height / blockH;
+
+        // Initial State: Screen Off
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, width, height);
+
+        // --- Audio Synthesis ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            if (!noiseSource) {
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                noiseSource = audioCtx.createBufferSource();
+                noiseSource.buffer = buffer;
+                noiseSource.loop = true;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 4000;
+
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = 0;
+
+                noiseSource.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                noiseSource.start();
+            }
+
+            updateNoiseVolume();
+        }
+
+        function stopAudio() {
+            if (audioCtx && audioCtx.state === 'running' && gainNode) {
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            }
+        }
+
+        function updateNoiseVolume() {
+            if (!gainNode || !power) return;
+
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const scaledVol = (currentVolume / 100) * maxNoiseVol;
+
+            if ([666, 100, 777, 420].includes(currentChannel) || ytEasterEggs[currentChannel]) {
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            } else {
+                gainNode.gain.setValueAtTime(scaledVol, audioCtx.currentTime);
+            }
+        }
+
+        function playClick(type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const clickGain = audioCtx.createGain();
+            osc.connect(clickGain);
+            clickGain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'heavy') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                clickGain.gain.setValueAtTime(0.5, now);
+                clickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'light') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.05);
+                clickGain.gain.setValueAtTime(0.3, now);
+                clickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        // --- Utility ---
+        function extractVideoID(url) {
+            let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+            return match ? match[1] : null;
+        }
+
+        function showOSD(element, text) {
+            if (!power) return;
+            channelDisplay.style.opacity = 0;
+            volumeDisplay.style.opacity = 0;
+
+            element.textContent = text;
+            element.style.opacity = 1;
+
+            clearTimeout(osdTimeout);
+            osdTimeout = setTimeout(() => { element.style.opacity = 0; }, 2000);
+        }
+
+        // --- YouTube Overlay Handlers ---
+        function playVideoOnPlayer(videoId) {
+            if (!ytApiReady || typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+                setTimeout(() => playVideoOnPlayer(videoId), 100);
+                return;
+            }
+
+            const originVal = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+
+            if (activeVideoPlayer && typeof activeVideoPlayer.loadVideoById === 'function') {
+                try {
+                    activeVideoPlayer.loadVideoById(videoId);
+                    activeVideoPlayer.setVolume(currentVolume);
+                    activeVideoPlayer.playVideo();
+                } catch (e) {
+                    recreateVideoPlayer(videoId, originVal);
+                }
+            } else {
+                recreateVideoPlayer(videoId, originVal);
+            }
+        }
+
+        function recreateVideoPlayer(videoId, originVal) {
+            ytWrapper.innerHTML = '<div id="yt-player-target"></div>';
+            activeVideoPlayer = new YT.Player('yt-player-target', {
+                host: 'https://www.youtube-nocookie.com',
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 1,
+                    'enablejsapi': 1,
+                    'origin': originVal
+                },
+                events: {
+                    'onReady': (e) => {
+                        e.target.setVolume(currentVolume);
+                        e.target.playVideo();
+                    }
+                }
+            });
+        }
+
+        function playAudioOnPlayer(videoId) {
+            if (!ytApiReady || typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+                setTimeout(() => playAudioOnPlayer(videoId), 100);
+                return;
+            }
+
+            const originVal = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+
+            if (activeAudioPlayer && typeof activeAudioPlayer.loadVideoById === 'function') {
+                try {
+                    activeAudioPlayer.loadVideoById(videoId);
+                    activeAudioPlayer.setVolume(currentVolume);
+                    activeAudioPlayer.playVideo();
+                } catch (e) {
+                    recreateAudioPlayer(videoId, originVal);
+                }
+            } else {
+                recreateAudioPlayer(videoId, originVal);
+            }
+        }
+
+        function recreateAudioPlayer(videoId, originVal) {
+            ytAudioWrapper.innerHTML = '<div id="yt-audio-target"></div>';
+            activeAudioPlayer = new YT.Player('yt-audio-target', {
+                host: 'https://www.youtube-nocookie.com',
+                height: '0',
+                width: '0',
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 0,
+                    'enablejsapi': 1,
+                    'origin': originVal
+                },
+                events: {
+                    'onReady': (e) => {
+                        e.target.setVolume(currentVolume);
+                        e.target.playVideo();
+                    }
+                }
+            });
+        }
+
+        function pauseVideoOnPlayer() {
+            if (activeVideoPlayer && typeof activeVideoPlayer.pauseVideo === 'function') {
+                activeVideoPlayer.pauseVideo();
+            }
+        }
+
+        function pauseAudioOnPlayer() {
+            if (activeAudioPlayer && typeof activeAudioPlayer.pauseVideo === 'function') {
+                activeAudioPlayer.pauseVideo();
+            }
+        }
+
+        function syncYTVolume() {
+            if (activeVideoPlayer && typeof activeVideoPlayer.setVolume === 'function') {
+                activeVideoPlayer.setVolume(currentVolume);
+            }
+            if (activeAudioPlayer && typeof activeAudioPlayer.setVolume === 'function') {
+                activeAudioPlayer.setVolume(currentVolume);
+            }
+        }
+
+        ytSubmit.addEventListener('click', () => {
+            const url = ytInput.value.trim();
+            if (url) {
+                const vidId = extractVideoID(url);
+                if (vidId) {
+                    ytUI.style.display = 'none';
+                    ytWrapper.style.display = 'block';
+                    playVideoOnPlayer(vidId);
+                } else {
+                    ytInput.value = '';
+                    ytInput.placeholder = "INVALID LINK. TRY AGAIN.";
+                }
+            }
+        });
+
+        ytCancel.addEventListener('click', () => {
+            ytUI.style.display = 'none';
+            ytInput.value = '';
+            currentChannel = 3;
+            handleChannelSwitch();
+        });
+
+        function handleChannelSwitch() {
+            ytUI.style.display = 'none';
+            ytInput.value = '';
+            ytInput.placeholder = "PASTE YOUTUBE URL...";
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+
+            const isEasterEgg = !!ytEasterEggs[currentChannel];
+
+            if (isEasterEgg) {
+                ytWrapper.style.display = 'block';
+                playVideoOnPlayer(ytEasterEggs[currentChannel]);
+            } else {
+                if (currentChannel !== 777 || !activeVideoPlayer) {
+                    ytWrapper.style.display = 'none';
+                    pauseVideoOnPlayer();
+                }
+            }
+
+            if (currentChannel === 420) {
+                playAudioOnPlayer('WXapsdP7LJM');
+            } else {
+                pauseAudioOnPlayer();
+            }
+
+            if (currentChannel === 777) {
+                ytUI.style.display = 'flex';
+                ytInput.focus();
+            }
+
+            updateNoiseVolume();
+            showOSD(channelDisplay, currentChannel.toString().padStart(2, '0'));
+        }
+
+        // --- Interactions ---
+        btnPower.addEventListener('click', () => {
+            power = !power;
+            playClick('heavy');
+            btnPower.classList.toggle('active', power);
+
+            if (power) {
+                initAudio();
+                handleChannelSwitch();
+            } else {
+                stopAudio();
+
+                ctx.globalAlpha = 1.0;
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.fillStyle = '#050505';
+                ctx.fillRect(0, 0, width, height);
+
+                channelDisplay.style.opacity = 0;
+                volumeDisplay.style.opacity = 0;
+
+                ytWrapper.style.display = 'none';
+                pauseVideoOnPlayer();
+                pauseAudioOnPlayer();
+
+                ytUI.style.display = 'none';
+            }
+        });
+
+        document.querySelectorAll('.btn-num').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!power || ytUI.style.display === 'flex') return;
+                playClick('light');
+
+                inputBuffer += btn.dataset.num;
+                if (inputBuffer.length > 3) inputBuffer = inputBuffer.slice(-3);
+
+                showOSD(channelDisplay, inputBuffer);
+                clearTimeout(inputTimeout);
+
+                if (inputBuffer.length === 3) {
+                    currentChannel = parseInt(inputBuffer, 10);
+                    inputBuffer = "";
+                    handleChannelSwitch();
+                } else {
+                    inputTimeout = setTimeout(() => {
+                        currentChannel = parseInt(inputBuffer, 10);
+                        inputBuffer = "";
+                        handleChannelSwitch();
+                    }, 1200);
+                }
+            });
+        });
+
+        btnChUp.addEventListener('click', () => {
+            if (!power || ytUI.style.display === 'flex') return;
+            playClick('light');
+            currentChannel++;
+            if (currentChannel > 999) currentChannel = 2;
+            handleChannelSwitch();
+        });
+
+        btnChDn.addEventListener('click', () => {
+            if (!power || ytUI.style.display === 'flex') return;
+            playClick('light');
+            currentChannel--;
+            if (currentChannel < 2) currentChannel = 999;
+            handleChannelSwitch();
+        });
+
+        // Seek Logic
+        btnSeekUp.addEventListener('click', () => {
+            if (!power || ytUI.style.display === 'flex') return;
+            playClick('light');
+
+            // Find the next available easter egg channel that is higher than the current one
+            let nextChannel = seekableChannels.find(ch => ch > currentChannel);
+            // If we've passed the highest one, loop back to the beginning
+            if (!nextChannel) nextChannel = seekableChannels[0];
+
+            currentChannel = nextChannel;
+            handleChannelSwitch();
+        });
+
+        btnSeekDn.addEventListener('click', () => {
+            if (!power || ytUI.style.display === 'flex') return;
+            playClick('light');
+
+            // Reverse the list to easily find the first channel lower than the current one
+            let prevChannel = [...seekableChannels].reverse().find(ch => ch < currentChannel);
+            // If we passed the lowest one, loop back to the highest one
+            if (!prevChannel) prevChannel = seekableChannels[seekableChannels.length - 1];
+
+            currentChannel = prevChannel;
+            handleChannelSwitch();
+        });
+
+        btnVolUp.addEventListener('click', () => {
+            if (!power) return;
+            playClick('light');
+            currentVolume = Math.min(100, currentVolume + 5);
+            updateNoiseVolume();
+            syncYTVolume();
+            showOSD(volumeDisplay, `VOL ${'|'.repeat(Math.ceil(currentVolume / 10))}`);
+        });
+
+        btnVolDn.addEventListener('click', () => {
+            if (!power) return;
+            playClick('light');
+            currentVolume = Math.max(0, currentVolume - 5);
+            updateNoiseVolume();
+            syncYTVolume();
+            showOSD(volumeDisplay, `VOL ${'|'.repeat(Math.ceil(currentVolume / 10))}`);
+        });
+
+        btnPsych.addEventListener('click', () => {
+            playClick('light');
+            psychMode = !psychMode;
+            btnPsych.classList.toggle('active', psychMode);
+        });
+
+        btnWarp.addEventListener('click', () => {
+            playClick('light');
+            timeWarp = !timeWarp;
+            btnWarp.classList.toggle('active', timeWarp);
+        });
+
+        btnPlayPause.addEventListener('click', () => {
+            if (!power) return;
+            playClick('light');
+
+            if (currentChannel === 420 && activeAudioPlayer && typeof activeAudioPlayer.getPlayerState === 'function') {
+                const state = activeAudioPlayer.getPlayerState();
+                if (state === 1) { // YT.PlayerState.PLAYING
+                    activeAudioPlayer.pauseVideo();
+                    showOSD(channelDisplay, "PAUSE");
+                } else {
+                    activeAudioPlayer.playVideo();
+                    showOSD(channelDisplay, "PLAY");
+                }
+            } else if ((ytEasterEggs[currentChannel] || currentChannel === 777) && activeVideoPlayer && typeof activeVideoPlayer.getPlayerState === 'function') {
+                const state = activeVideoPlayer.getPlayerState();
+                if (state === 1) { // YT.PlayerState.PLAYING
+                    activeVideoPlayer.pauseVideo();
+                    showOSD(channelDisplay, "PAUSE");
+                } else {
+                    activeVideoPlayer.playVideo();
+                    showOSD(channelDisplay, "PLAY");
+                }
+            }
+        });
+
+        // --- Render Loop ---
+        function drawStatic() {
+            requestAnimationFrame(drawStatic);
+            if (!power) return;
+
+            time += 0.05;
+
+            // --- Easter Egg Overrides ---
+            if (currentChannel === 666) {
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, width, height);
+                ctx.fillStyle = '#ffd700';
+                ctx.font = 'bold 28px "Cinzel Decorative", serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.fillText("What? You thought", width / 2, height / 2 - 20);
+                ctx.fillText("this would be scary?", width / 2, height / 2 + 20);
+                return;
+            }
+
+            if (currentChannel === 100) {
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                const colors = ['#c0c0c0', '#c0c000', '#00c0c0', '#00c000', '#c000c0', '#c00000', '#0000c0'];
+                const barW = width / colors.length;
+                for (let i = 0; i < colors.length; i++) {
+                    ctx.fillStyle = colors[i];
+                    ctx.fillRect(i * barW, 0, barW, height * 0.7);
+                }
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, height * 0.7, width, height * 0.3);
+                ctx.fillStyle = '#fff';
+                ctx.font = '32px "VT323", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Broadcast will Return Shortly', width / 2, height * 0.82);
+                ctx.font = '40px "VT323", monospace';
+                ctx.fillText('OWLCAN NEWS', width / 2, height * 0.94);
+                return;
+            }
+
+            if (currentChannel === 777 || ytEasterEggs[currentChannel]) {
+                return;
+            }
+
+            // --- Standard Static Rendering ---
+            let startX = 0, endX = cols, startY = 0, endY = rows;
+
+            if (timeWarp) {
+                ctx.globalAlpha = 0.96;
+                ctx.translate(width / 2, height / 2);
+                ctx.scale(1.08, 1.08);
+                ctx.rotate(Math.sin(time * 0.5) * 0.015);
+                ctx.translate(-width / 2, -height / 2);
+                ctx.drawImage(canvas, 0, 0);
+
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.globalAlpha = 1.0;
+
+                startX = Math.floor(cols * 0.35);
+                endX = Math.floor(cols * 0.65);
+                startY = Math.floor(rows * 0.35);
+                endY = Math.floor(rows * 0.65);
+            }
+
+            for (let x = startX; x < endX; x++) {
+                for (let y = startY; y < endY; y++) {
+                    let r, g, b;
+                    if (psychMode) {
+                        r = Math.random() * 255 * (0.5 + 0.5 * Math.sin(time + x * 0.1));
+                        g = Math.random() * 255 * (0.5 + 0.5 * Math.cos(time + y * 0.1));
+                        b = Math.random() * 255 * (0.5 + 0.5 * Math.sin(time + (x + y) * 0.05));
+                    } else {
+                        let noise = Math.random() * 255;
+                        r = noise; g = noise; b = noise;
+                    }
+                    ctx.fillStyle = `rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`;
+                    ctx.fillRect(x * blockW, y * blockH, blockW, blockH);
+                }
+            }
+
+            // 420 Easter Egg
+            if (currentChannel === 420) {
+                ctx.font = '80px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const jx = width / 2 + (Math.random() - 0.5) * 15;
+                const jy = height / 2 + (Math.random() - 0.5) * 15;
+                ctx.fillText('🍃 😉', jx, jy);
+            }
+        }
+
+        drawStatic();
+    </script>
+</body>
+
+</html>
