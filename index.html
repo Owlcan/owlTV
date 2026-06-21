@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owltech CMB Visualizer</title>
+    <title>Owltech CMB Visualizer - Interactive Upgrade</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=VT323&display=swap"
         rel="stylesheet">
     <style>
@@ -12,13 +12,29 @@
             background-color: #121212;
             color: #eee;
             font-family: sans-serif;
+            margin: 0;
+            overflow: hidden;
+            /* Prevents scrollbars when scaled */
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Responsive Wrapper */
+        #app-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
             gap: 60px;
+            width: max-content;
+            /* Smooth scaling transition when resizing window */
+            transition: transform 0.1s ease-out;
+            transform: translate(-50%, -50%);
+            /* Base transform */
         }
 
         /* TV Bezel */
@@ -50,8 +66,8 @@
             filter: contrast(1.3) brightness(0.9);
         }
 
-        /* YouTube Injection Layer */
-        .yt-container {
+        /* Iframe & YouTube Injection Layers */
+        .media-container {
             position: absolute;
             top: 0;
             left: 0;
@@ -61,6 +77,14 @@
             z-index: 4;
             pointer-events: auto;
             background: #000;
+        }
+
+        .media-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            /* Keep the slight screen curve effect for embedded apps */
+            border-radius: 50% / 5%;
         }
 
         /* On-Screen Terminal UI for YouTube Input */
@@ -158,6 +182,14 @@
             bottom: 25px;
             right: 35px;
             font-size: 36px;
+        }
+
+        .interactive-hint {
+            top: 25px;
+            left: 35px;
+            font-size: 24px;
+            color: #0ff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
         }
 
         /* Scanlines Overlay */
@@ -299,6 +331,170 @@
             color: #fff;
         }
 
+        /* Magitek Console & Controller */
+        .console-station {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .magitek-console {
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            width: 180px;
+            height: 80px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(255, 215, 0, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 15px;
+            box-sizing: border-box;
+        }
+
+        .console-slot {
+            width: 130px;
+            height: 12px;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 6px;
+            box-shadow: inset 0 2px 5px #000;
+        }
+
+        .console-led {
+            width: 8px;
+            height: 8px;
+            background: #500;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #000;
+            position: absolute;
+            bottom: 12px;
+            left: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .console-led.active {
+            background: #0f0;
+            box-shadow: 0 0 10px #0f0, 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .console-logo {
+            color: #ffd700;
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .controller-cord {
+            width: 6px;
+            height: 40px;
+            background: #111;
+            border-left: 1px solid #333;
+            border-right: 1px solid #000;
+            box-shadow: 5px 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .magitek-controller {
+            background: linear-gradient(145deg, #222, #111);
+            border: 2px solid #ffd700;
+            border-radius: 5px;
+            /* Long rectangle shape */
+            padding: 20px 40px;
+            width: 280px;
+            height: 110px;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.9), inset 0 2px 5px rgba(255, 215, 0, 0.2);
+            border-bottom-width: 4px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .dpad-layout {
+            display: grid;
+            grid-template-columns: repeat(3, 35px);
+            grid-template-rows: repeat(3, 35px);
+            gap: 2px;
+        }
+
+        .magitek-controller .btn-dpad {
+            background: #1a1a1a !important;
+            border: 1px solid #ffd700;
+            color: #ffd700;
+            font-size: 1.2em !important;
+            padding: 0 !important;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 0 #050505, inset 0 1px 2px rgba(255, 215, 0, 0.2);
+            transition: all 0.05s;
+            border-radius: 5px;
+        }
+
+        .magitek-controller .btn-dpad:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #050505;
+            background: #ffd700 !important;
+            color: #000;
+        }
+
+        .dir-up {
+            grid-column: 2;
+            grid-row: 1;
+            border-radius: 8px 8px 3px 3px !important;
+        }
+
+        .dir-left {
+            grid-column: 1;
+            grid-row: 2;
+            border-radius: 8px 3px 3px 8px !important;
+        }
+
+        .dir-right {
+            grid-column: 3;
+            grid-row: 2;
+            border-radius: 3px 8px 8px 3px !important;
+        }
+
+        .dir-down {
+            grid-column: 2;
+            grid-row: 3;
+            border-radius: 3px 3px 8px 8px !important;
+        }
+
+        .dpad-center {
+            grid-column: 2;
+            grid-row: 2;
+            background: #1a1a1a;
+            border: 1px solid #ffd700;
+            box-shadow: 0 4px 0 #050505, inset 0 1px 2px rgba(255, 215, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        .action-layout {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .btn-ok {
+            width: 50px;
+            height: 50px;
+            border-radius: 50% !important;
+            background: #332a00 !important;
+            font-size: 1.1em !important;
+            font-weight: bold;
+        }
+
         .btn-warp {
             background: #426 !important;
             grid-column: span 3;
@@ -330,68 +526,125 @@
         <div id="yt-audio-target"></div>
     </div>
 
-    <div class="tv-set">
-        <div class="screen-container">
-            <canvas id="screen" width="960" height="720"></canvas>
-
-            <div id="yt-wrapper" class="yt-container">
-                <div id="yt-player-target"></div>
+    <!-- Responsive App Wrapper -->
+    <div id="app-wrapper">
+        <!-- New Console Station -->
+        <div class="console-station">
+            <div class="magitek-console">
+                <div class="console-slot"></div>
+                <div class="console-led" id="console-led"></div>
+                <div class="console-logo">OWL-ES</div>
             </div>
-
-            <div id="yt-ui" class="yt-ui">
-                <div class="yt-ui-title">SECURE UPLINK REQUESTED</div>
-                <input type="text" id="yt-input" placeholder="PASTE YOUTUBE URL..." autocomplete="off">
-                <div class="yt-ui-buttons">
-                    <button id="yt-cancel">CANCEL</button>
-                    <button id="yt-submit">CONNECT</button>
+            <div class="controller-cord"></div>
+            <div class="magitek-controller">
+                <div class="dpad-layout">
+                    <button class="btn-dpad dir-up" data-key="Tab" data-shift="true" id="btn-up">&#9650;</button>
+                    <button class="btn-dpad dir-left" data-key="Tab" data-shift="true" id="btn-left">&#9664;</button>
+                    <div class="dpad-center"></div>
+                    <button class="btn-dpad dir-right" data-key="Tab" id="btn-right">&#9654;</button>
+                    <button class="btn-dpad dir-down" data-key="Tab" id="btn-down">&#9660;</button>
+                </div>
+                <div class="action-layout">
+                    <button class="btn-dpad btn-ok" data-key="Enter" id="btn-ok">OK</button>
                 </div>
             </div>
-
-            <div id="channel-display" class="osd channel-display">03</div>
-            <div id="volume-display" class="osd volume-display">VOL 50</div>
-            <div class="scanlines"></div>
-            <div class="glare"></div>
         </div>
-        <div class="logo">OWLTECH</div>
-    </div>
 
-    <div class="remote">
-        <div class="remote-title">CMB Tuner</div>
-        <div></div>
-        <div></div>
-        <button class="btn-power" id="btn-power">PWR</button>
+        <div class="tv-set">
+            <div class="screen-container">
+                <canvas id="screen" width="960" height="720"></canvas>
 
-        <button class="btn-num" data-num="1">1</button>
-        <button class="btn-num" data-num="2">2</button>
-        <button class="btn-num" data-num="3">3</button>
+                <!-- YouTube Video Wrapper -->
+                <div id="yt-wrapper" class="media-container">
+                    <div id="yt-player-target"></div>
+                </div>
 
-        <button class="btn-num" data-num="4">4</button>
-        <button class="btn-num" data-num="5">5</button>
-        <button class="btn-num" data-num="6">6</button>
+                <!-- Interactive Apps Wrapper -->
+                <div id="iframe-wrapper" class="media-container">
+                    <iframe id="app-iframe" src="" frameborder="0"></iframe>
+                </div>
 
-        <button class="btn-num" data-num="7">7</button>
-        <button class="btn-num" data-num="8">8</button>
-        <button class="btn-num" data-num="9">9</button>
+                <!-- YouTube URL Injection UI -->
+                <div id="yt-ui" class="yt-ui">
+                    <div class="yt-ui-title">SECURE UPLINK REQUESTED</div>
+                    <input type="text" id="yt-input" placeholder="PASTE YOUTUBE URL..." autocomplete="off">
+                    <div class="yt-ui-buttons">
+                        <button id="yt-cancel">CANCEL</button>
+                        <button id="yt-submit">CONNECT</button>
+                    </div>
+                </div>
 
-        <button class="btn-ch" id="btn-ch-up">CH &#9650;</button>
-        <button class="btn-num" data-num="0">0</button>
-        <button class="btn-vol" id="btn-vol-up">VOL &#9650;</button>
+                <div id="channel-display" class="osd channel-display">03</div>
+                <div id="volume-display" class="osd volume-display">VOL 50</div>
+                <div id="interactive-hint" class="osd interactive-hint">APP LOADED: CLICK TO INTERACT</div>
+                <div class="scanlines"></div>
+                <div class="glare"></div>
+            </div>
+            <div class="logo">OWLTECH</div>
+        </div>
 
-        <button class="btn-ch" id="btn-ch-dn">CH &#9660;</button>
-        <button class="btn-ch" id="btn-play-pause" style="font-size: 1.2em !important;">⏯️</button>
-        <button class="btn-vol" id="btn-vol-dn">VOL &#9660;</button>
+        <div class="remote">
+            <div class="remote-title">CMB Tuner</div>
+            <div></div>
+            <div></div>
+            <button class="btn-power" id="btn-power">PWR</button>
 
-        <button class="btn-ch" id="btn-seek-dn" style="font-size: 1.2em !important;">⏪</button>
-        <div
-            style="display:flex; align-items:center; justify-content:center; color:#555; font-size:0.75em; font-weight:bold; letter-spacing: 1px;">
-            SEEK</div>
-        <button class="btn-ch" id="btn-seek-up" style="font-size: 1.2em !important;">⏩</button>
+            <button class="btn-num" data-num="1">1</button>
+            <button class="btn-num" data-num="2">2</button>
+            <button class="btn-num" data-num="3">3</button>
 
-        <button class="btn-warp" id="btn-warp">TIME WARP</button>
-        <button class="btn-psych" id="btn-psych">PSYCHEDELIA</button>
+            <button class="btn-num" data-num="4">4</button>
+            <button class="btn-num" data-num="5">5</button>
+            <button class="btn-num" data-num="6">6</button>
+
+            <button class="btn-num" data-num="7">7</button>
+            <button class="btn-num" data-num="8">8</button>
+            <button class="btn-num" data-num="9">9</button>
+
+            <button class="btn-ch" id="btn-ch-up">CH &#9650;</button>
+            <button class="btn-num" data-num="0">0</button>
+            <button class="btn-vol" id="btn-vol-up">VOL &#9650;</button>
+
+            <button class="btn-ch" id="btn-ch-dn">CH &#9660;</button>
+            <button class="btn-ch" id="btn-play-pause" style="font-size: 1.2em !important;">⏯️</button>
+            <button class="btn-vol" id="btn-vol-dn">VOL &#9660;</button>
+
+            <button class="btn-ch" id="btn-seek-dn" style="font-size: 1.2em !important;">⏪</button>
+            <div
+                style="display:flex; align-items:center; justify-content:center; color:#555; font-size:0.75em; font-weight:bold; letter-spacing: 1px;">
+                SEEK</div>
+            <button class="btn-ch" id="btn-seek-up" style="font-size: 1.2em !important;">⏩</button>
+
+            <button class="btn-warp" id="btn-warp">TIME WARP</button>
+            <button class="btn-psych" id="btn-psych">PSYCHEDELIA</button>
+        </div>
     </div>
 
     <script>
+        // --- Responsive Scaling for Mobile/Landscape ---
+        function resizeApp() {
+            const wrapper = document.getElementById('app-wrapper');
+            // Base dimensions to fit all components comfortably 
+            // (180 console + 60 gap + 1040 tv + 60 gap + 200 remote + margins)
+            const baseWidth = 1650;
+            const baseHeight = 900;
+
+            const scaleX = window.innerWidth / baseWidth;
+            const scaleY = window.innerHeight / baseHeight;
+
+            // Use the smaller scale to ensure everything fits perfectly
+            let scale = Math.min(scaleX, scaleY);
+
+            // Cap scale at 1 so it doesn't get comically huge on large 4K monitors
+            if (scale > 1) scale = 1;
+
+            wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        window.addEventListener('resize', resizeApp);
+        // Call immediately to scale on load
+        resizeApp();
+
         // Load the YouTube IFrame Player API code asynchronously
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -424,8 +677,9 @@
         let inputBuffer = "";
         let inputTimeout;
         let osdTimeout;
+        let hintTimeout;
 
-        // Embedded Easter Egg Channels Map
+        // Embedded YouTube Easter Egg Channels
         const ytEasterEggs = {
             5: "UA1T4OHAArg",
             11: "-EODjd3y_hk",
@@ -449,8 +703,17 @@
             99: "nnSoyL97jl8"
         };
 
-        // Create a sorted array of just the Easter Egg channels for the Seek logic
-        const seekableChannels = Object.keys(ytEasterEggs).map(Number).sort((a, b) => a - b);
+        // Embedded Interactive App Channels
+        const iframeApps = {
+            101: "https://owlcan.github.io/DSInteractiveHandbook/scholia-diaspros-map.html",
+            120: "https://owlcan.github.io/DSInteractiveHandbook/plainsminibattle%20copy.html"
+        };
+
+        // Combine both for the Seek logic and sort numerically
+        const seekableChannels = [
+            ...Object.keys(ytEasterEggs).map(Number),
+            ...Object.keys(iframeApps).map(Number)
+        ].sort((a, b) => a - b);
 
         // UI Elements
         const btnPower = document.getElementById('btn-power');
@@ -465,9 +728,13 @@
         const btnPlayPause = document.getElementById('btn-play-pause');
         const channelDisplay = document.getElementById('channel-display');
         const volumeDisplay = document.getElementById('volume-display');
+        const interactiveHint = document.getElementById('interactive-hint');
+        const consoleLed = document.getElementById('console-led');
 
         const ytWrapper = document.getElementById('yt-wrapper');
         const ytAudioWrapper = document.getElementById('yt-audio-wrapper');
+        const iframeWrapper = document.getElementById('iframe-wrapper');
+        const appIframe = document.getElementById('app-iframe');
 
         const ytUI = document.getElementById('yt-ui');
         const ytInput = document.getElementById('yt-input');
@@ -538,7 +805,8 @@
 
             const scaledVol = (currentVolume / 100) * maxNoiseVol;
 
-            if ([666, 100, 777, 420].includes(currentChannel) || ytEasterEggs[currentChannel]) {
+            // Silence noise for media channels
+            if ([666, 100, 777, 420].includes(currentChannel) || ytEasterEggs[currentChannel] || iframeApps[currentChannel]) {
                 gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
             } else {
                 gainNode.gain.setValueAtTime(scaledVol, audioCtx.currentTime);
@@ -581,7 +849,7 @@
             return match ? match[1] : null;
         }
 
-        function showOSD(element, text) {
+        function showOSD(element, text, duration = 2000) {
             if (!power) return;
             channelDisplay.style.opacity = 0;
             volumeDisplay.style.opacity = 0;
@@ -589,8 +857,13 @@
             element.textContent = text;
             element.style.opacity = 1;
 
-            clearTimeout(osdTimeout);
-            osdTimeout = setTimeout(() => { element.style.opacity = 0; }, 2000);
+            if (element === interactiveHint) {
+                clearTimeout(hintTimeout);
+                hintTimeout = setTimeout(() => { element.style.opacity = 0; }, duration);
+            } else {
+                clearTimeout(osdTimeout);
+                osdTimeout = setTimeout(() => { element.style.opacity = 0; }, duration);
+            }
         }
 
         // --- YouTube Overlay Handlers ---
@@ -642,9 +915,7 @@
                 setTimeout(() => playAudioOnPlayer(videoId), 100);
                 return;
             }
-
             const originVal = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
-
             if (activeAudioPlayer && typeof activeAudioPlayer.loadVideoById === 'function') {
                 try {
                     activeAudioPlayer.loadVideoById(videoId);
@@ -724,33 +995,57 @@
         });
 
         function handleChannelSwitch() {
+            // Clean up UI and reset styling
             ytUI.style.display = 'none';
             ytInput.value = '';
             ytInput.placeholder = "PASTE YOUTUBE URL...";
+            interactiveHint.style.opacity = 0;
 
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.globalAlpha = 1.0;
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, width, height);
 
-            const isEasterEgg = !!ytEasterEggs[currentChannel];
+            const isYTEasterEgg = !!ytEasterEggs[currentChannel];
+            const isAppEasterEgg = !!iframeApps[currentChannel];
 
-            if (isEasterEgg) {
+            // 1. Handle Interactive App Iframe routing
+            if (isAppEasterEgg) {
+                iframeWrapper.style.display = 'block';
+                appIframe.src = iframeApps[currentChannel];
+                showOSD(interactiveHint, "APP DETECTED: CLICK SCREEN TO INTERACT", 4000);
+
+                // Hide YT completely
+                ytWrapper.style.display = 'none';
+                pauseVideoOnPlayer();
+            }
+            // 2. Handle YouTube routing
+            else if (isYTEasterEgg) {
                 ytWrapper.style.display = 'block';
                 playVideoOnPlayer(ytEasterEggs[currentChannel]);
-            } else {
+
+                // Hide Apps completely
+                iframeWrapper.style.display = 'none';
+                appIframe.src = '';
+            }
+            // 3. Handle Standard Channels
+            else {
+                iframeWrapper.style.display = 'none';
+                appIframe.src = '';
                 if (currentChannel !== 777 || !activeVideoPlayer) {
                     ytWrapper.style.display = 'none';
                     pauseVideoOnPlayer();
                 }
             }
 
+            // Audio routing for specific channels
             if (currentChannel === 420) {
                 playAudioOnPlayer('WXapsdP7LJM');
             } else {
                 pauseAudioOnPlayer();
             }
 
+            // Special UI for Channel 777
             if (currentChannel === 777) {
                 ytUI.style.display = 'flex';
                 ytInput.focus();
@@ -769,6 +1064,7 @@
             if (power) {
                 initAudio();
                 handleChannelSwitch();
+                consoleLed.classList.add('active');
             } else {
                 stopAudio();
 
@@ -779,8 +1075,12 @@
 
                 channelDisplay.style.opacity = 0;
                 volumeDisplay.style.opacity = 0;
+                interactiveHint.style.opacity = 0;
+                consoleLed.classList.remove('active');
 
                 ytWrapper.style.display = 'none';
+                iframeWrapper.style.display = 'none';
+                appIframe.src = '';
                 pauseVideoOnPlayer();
                 pauseAudioOnPlayer();
 
@@ -829,14 +1129,12 @@
             handleChannelSwitch();
         });
 
-        // Seek Logic
+        // Seek Logic (Updated to find both YT and App channels)
         btnSeekUp.addEventListener('click', () => {
             if (!power || ytUI.style.display === 'flex') return;
             playClick('light');
 
-            // Find the next available easter egg channel that is higher than the current one
             let nextChannel = seekableChannels.find(ch => ch > currentChannel);
-            // If we've passed the highest one, loop back to the beginning
             if (!nextChannel) nextChannel = seekableChannels[0];
 
             currentChannel = nextChannel;
@@ -847,13 +1145,49 @@
             if (!power || ytUI.style.display === 'flex') return;
             playClick('light');
 
-            // Reverse the list to easily find the first channel lower than the current one
             let prevChannel = [...seekableChannels].reverse().find(ch => ch < currentChannel);
-            // If we passed the lowest one, loop back to the highest one
             if (!prevChannel) prevChannel = seekableChannels[seekableChannels.length - 1];
 
             currentChannel = prevChannel;
             handleChannelSwitch();
+        });
+
+        // --- D-Pad Logic ---
+        document.querySelectorAll('.btn-dpad').forEach(btn => {
+            // Prevent the button click from stealing focus away from the embedded app
+            btn.addEventListener('mousedown', (e) => e.preventDefault());
+
+            btn.addEventListener('click', () => {
+                if (!power) return;
+                playClick('light');
+
+                const keyName = btn.dataset.key;
+                const isShift = btn.dataset.shift === 'true';
+
+                // Construct a keyboard event mimicking Tab / Shift+Tab / Enter
+                const event = new KeyboardEvent('keydown', {
+                    key: keyName,
+                    code: keyName === 'Enter' ? 'Enter' : 'Tab',
+                    keyCode: keyName === 'Enter' ? 13 : 9,
+                    which: keyName === 'Enter' ? 13 : 9,
+                    shiftKey: isShift,
+                    bubbles: true,
+                    cancelable: true
+                });
+
+                if (iframeApps[currentChannel]) {
+                    try {
+                        // Focus the iframe to ensure it's the active element target
+                        appIframe.focus();
+                        appIframe.contentWindow.dispatchEvent(event);
+                    } catch (e) {
+                        // Standard fallback dispatch onto the iframe element container
+                        appIframe.dispatchEvent(event);
+                    }
+                } else {
+                    document.dispatchEvent(event);
+                }
+            });
         });
 
         btnVolUp.addEventListener('click', () => {
@@ -952,7 +1286,7 @@
                 return;
             }
 
-            if (currentChannel === 777 || ytEasterEggs[currentChannel]) {
+            if (currentChannel === 777 || ytEasterEggs[currentChannel] || iframeApps[currentChannel]) {
                 return;
             }
 
